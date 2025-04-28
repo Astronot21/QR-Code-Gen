@@ -31,7 +31,6 @@ import stddraw
 # global variables
 # Your global variables go here
 
-
 def draw_qr_grid(qr_grid):
     """
     Draws the given qr data onto the canvas of stddraw in the format specified in
@@ -40,52 +39,73 @@ def draw_qr_grid(qr_grid):
     Args:
         qr_grid (2D array of int): The data of the QR grid
     """
-
     # =========================================================================================================
     # Canvas variables:
 
     row_counter:int = 0
-    column_counter:int = 0
 
     CANVAS_SIDE_LENGTH = 600
     square_size:float = CANVAS_SIDE_LENGTH / (len(qr_grid) + 8)
-    # =========================================================================================================
 
+    # =========================================================================================================
 
     # =========================================================================================================
     # Canvas setup:
 
     stddraw.setCanvasSize(CANVAS_SIDE_LENGTH, CANVAS_SIDE_LENGTH)
+    stddraw.setXscale(0, CANVAS_SIDE_LENGTH)
+    stddraw.setYscale(0, CANVAS_SIDE_LENGTH)
     stddraw.setPenRadius(0.002)
 
+    stddraw.setPenColor(stddraw.WHITE)
+    stddraw.filledSquare(CANVAS_SIDE_LENGTH/2, CANVAS_SIDE_LENGTH/2, CANVAS_SIDE_LENGTH/2)
+
+
+    # Margin (4 squares)
+    margin = 4 * square_size
+
+    # Important: Start from top (highest y value), and move downward
+    start_y = CANVAS_SIDE_LENGTH - margin - (square_size / 2)
+
     # =========================================================================================================
 
     # =========================================================================================================
-    # Drawing on canvas:
+    # Drawing squares:
 
+    # Colours set according to Doc 3: QR Code specifications
     for row in qr_grid:
         column_counter = 0
+        x = margin + (square_size / 2)
+
         for value in row:
-            # Colours set according to Doc 3: QR Code specifications
             if value == 0:
                 stddraw.setPenColor(stddraw.WHITE)
-            else:
+            elif value == 1:
                 stddraw.setPenColor(stddraw.BLACK)
+            else:
+                stddraw.setPenColor(stddraw.GRAY) # dashes
                 
             stddraw.filledSquare(
-                0.0 + (4 * square_size) + (square_size/2) + (column_counter * square_size),
-                0.0 + (4 * square_size) + (square_size/2) + (row_counter * square_size),
-                square_size/2                                 
+                x,
+                start_y - (row_counter * square_size),
+                square_size/2
             )
-            column_counter +=1
+
+            stddraw.show(5) # delay for animation (make 0 if none)
+            x += square_size
+            column_counter += 1
         row_counter += 1
 
     stddraw.show()
-
     # =========================================================================================================
 
 
 def add_dark_cell(qr_grid):
+    """
+    Changes value for dark cell to be at the hardcoded position. This position is always the same; the function is only applicable when in "real" mode.
+    Args:
+        qr_grid (2D array of int): The data of the QR grid
+    """
     # Values are hardcoded from specifications since only applicable with real QR code dimensions
     qr_grid[17][8] = 1
     
@@ -100,12 +120,12 @@ def print_qr_grid(qr_grid):
     """
 
 
-    stdio.writeln()
+    stdio.write("\n")
     # print out values
     for row in qr_grid:
         for value in row:
             stdio.write(str(value) + " ")
-        stdio.writeln()  # Move to the next line after each row 
+        stdio.write("\n")  # Move to the next line after each row 
 
 
 def make_position_pattern(pos_square_size):
@@ -521,7 +541,7 @@ def main(args):
     else: 
         apply_mask(grid, aux_grid, mask_pattern)
         print_qr_grid(grid)
-        # draw_qr_grid(grid)
+        draw_qr_grid(grid)
 
     # =========================================================================================================
 
