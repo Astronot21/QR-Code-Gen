@@ -96,7 +96,8 @@ def draw_qr_grid(qr_grid):
             column_counter += 1
         row_counter += 1
 
-    stddraw.show()
+    stddraw.show() # This will be removed in final submission
+    # stddraw.save("QR-output.png")
     # =========================================================================================================
 
 
@@ -109,6 +110,24 @@ def add_dark_cell(qr_grid):
     # Values are hardcoded from specifications since only applicable with real QR code dimensions
     qr_grid[17][8] = 1
     
+    
+def add_timing_strips(qr_grid):
+    """
+    Adds two timing strips based on locations provided by Doc 3: QR Code specifications
+    Args:
+        qr_grid (2D array of int): The data of the QR grid
+    """
+    # Indices:
+    # 6, 8 - 16
+    # 8 - 16, 6
+    for i in range(8, 17):
+        if i % 2 == 0:
+            qr_grid[6][i] = 1
+            qr_grid[i][6] = 1
+        else:
+            qr_grid[6][i] = 0
+            qr_grid[i][6] = 0
+
 
 def print_qr_grid(qr_grid):
     """
@@ -525,8 +544,10 @@ def main(args):
     add_data_at_anchor(grid, alignment_anchor, alignment_anchor, alignment_pattern)
     # print_qr_grid(grid)
 
-    # Add dark cell at hardcoded position if in real mode
-    if real_mode == 1 : add_dark_cell(grid) 
+    # Add dark cell, timing strips if in real mode
+    if real_mode == 1 : 
+        add_dark_cell(grid) 
+        add_timing_strips(grid)
 
     # Create auxliary grid: Provides reserved positions
     aux_grid = populate_aux_grid(aux_grid, grid)
