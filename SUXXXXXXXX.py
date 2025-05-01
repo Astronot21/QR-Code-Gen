@@ -137,7 +137,7 @@ def add_format_information_region(grid, gui_mode:str, real_mode:str, mask_patter
     """
     qr_type = gui_mode + real_mode
     format_vector = get_format_information_bits(qr_type, mask_pattern)
-    print(format_vector)
+    # print(format_vector)
 
     index_counter = 0
     for i in range(0, 9):
@@ -454,9 +454,6 @@ def populate_aux_grid(aux_grid, original_grid):
         for col in range(len(aux_grid)):
             if (original_grid[row][col] != '-'):
                 aux_grid[row][col] = 'X'
-                
-    # If in real mode:
-    # xxxxxxx
 
     return aux_grid
 
@@ -577,18 +574,19 @@ def main(args):
     alignment_pattern = make_alignment_pattern(alignment_pattern_size_param)
     add_data_at_anchor(grid, alignment_anchor, alignment_anchor, alignment_pattern)
     # print_qr_grid(grid)
-
-    # Create auxliary grid: Provides reserved positions
-    aux_grid = populate_aux_grid(aux_grid, grid)
     
     if (real_mode == 0):
         add_data_snake(grid, payload)
+        # Create auxliary grid: Provides reserved positions
+        aux_grid = populate_aux_grid(aux_grid, grid)
         apply_mask(grid, aux_grid, mask_pattern)
         print_qr_grid(grid)
     else: 
         add_dark_cell(grid) 
         add_timing_strips(grid)
         add_format_information_region(grid, str(gui_mode), str(real_mode), bin(mask_pattern)[2:].zfill(3))
+        # Create auxliary grid: Provides reserved positions
+        aux_grid = populate_aux_grid(aux_grid, grid)
         apply_mask(grid, aux_grid, mask_pattern)
         print_qr_grid(grid)
         draw_qr_grid(grid)
