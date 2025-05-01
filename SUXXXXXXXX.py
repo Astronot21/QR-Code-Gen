@@ -152,6 +152,7 @@ def add_format_information_region(grid, gui_mode:str, real_mode:str, mask_patter
     for i in range(0, 7):  
         grid[18 + i][8] = format_vector[8 + i]
 
+
 def print_qr_grid(qr_grid):
     """
     Prints the given qr data out to the standard output in the format specified in
@@ -448,12 +449,15 @@ def populate_aux_grid(aux_grid, original_grid):
         aux_grid:list[int] A new grid marking reserved spots with an X
         num_open_squares:int The number of non-reserved squaress
     """
-
+    # TODO: If in real mode, add additional X's, if not in real mode, execute only the code below
     for row in range(len(aux_grid)):
         for col in range(len(aux_grid)):
             if (original_grid[row][col] != '-'):
                 aux_grid[row][col] = 'X'
                 
+    # If in real mode:
+    # xxxxxxx
+
     return aux_grid
 
 
@@ -526,9 +530,15 @@ def main(args):
 
     # Checking payload error condition
     # n^2 - (3p^2 + a^2), assuming here only position patterns and alignment patterns are placed
-    available_spots = pow(grid_size_param, 2) - (3*pow(position_pattern_size_param, 2) + pow(alignment_pattern_size_param, 2))
+    if real_mode == 1:
+        available_spots = pow(grid_size_param, 2) - (3*pow(position_pattern_size_param, 2) + pow(alignment_pattern_size_param, 2)) - 18 - 30
+        # subtract sizes of timing patterns and format information regions
+    else:
+        available_spots = pow(grid_size_param, 2) - (3*pow(position_pattern_size_param, 2) + pow(alignment_pattern_size_param, 2))
+
     payload = build_payload(message_received, available_spots)
 
+    # TODO: Test thoroughly
     if (len(payload) > available_spots):
         print("ERROR: Payload too large")
         return
