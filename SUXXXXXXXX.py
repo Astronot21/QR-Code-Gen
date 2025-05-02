@@ -400,13 +400,13 @@ def encode_snake(size, message, pos_square_size, align_square_size):
     pass
 
 
-def build_payload(message, total_length):
+def build_payload(message, available_spots, real_mode:int):
     """
     Builds up the payload using the encoding info, message length, message codewords, termination pattern and padding bits
     
     Args:
         message:str: The message to be converted into the payload
-        total_length:int: The number of bits to fill, based on available grid slots
+        available_spots:int: The number of bits to fill, based on available grid slots
     Returns:
         payload:list[int] The full payload to be added to the grid
     """
@@ -417,13 +417,25 @@ def build_payload(message, total_length):
 
     # Convert message to 8-bit ASCII
     codewords = []
+    error_codewords = []
     for char in message:
         codewords.extend([int(b) for b in f"{ord(char):08b}"])
-
+        error_codewords.extend([ord(char)])
+    
     termination = [0, 0, 0, 0] # Fixed
 
     # Combine parts
     core_payload = encoding + message_length_bits + codewords + termination
+
+    if real_mode == 1:
+        payload = core_payload[:] + [0, 0, 0, 0, 0, 0, 0, 0]
+        available_spots -= ((message_length * 8) + 128 + 7 + 4 + 4) 
+        """
+        128 - error correction bits
+        7 - remainder bits
+        4 - termination pattern
+        4 - encoding info
+        """
 
     # Padding logic
     padding_bits = [1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1]
@@ -431,9 +443,15 @@ def build_payload(message, total_length):
 
     # Adds onto end of payload the required padding
     i = 0
-    while len(payload) < total_length:
+    while available_spots > 0:
         payload.append(padding_bits[i % len(padding_bits)])
         i += 1
+        available_spots -= 1
+
+    remainder_bits = [0, 0, 0, 0, 0, 0, 0]
+
+    error_correction_codewords = get_error_codewords(error_codewords) # 128 spots
+    payload = payload + error_correction_codewords + remainder_bits
 
     return payload
 
@@ -528,12 +546,12 @@ def main(args):
     # Checking payload error condition
     # n^2 - (3p^2 + a^2), assuming here only position patterns and alignment patterns are placed
     if real_mode == 1:
-        available_spots = pow(grid_size_param, 2) - (3*pow(position_pattern_size_param, 2) + pow(alignment_pattern_size_param, 2)) - 18 - 30
+        available_spots = pow(grid_size_param, 2) - (3*pow(position_pattern_size_param, 2) + pow(alignment_pattern_size_param, 2)) - 18 - 30 - 1
         # subtract sizes of timing patterns and format information regions
     else:
         available_spots = pow(grid_size_param, 2) - (3*pow(position_pattern_size_param, 2) + pow(alignment_pattern_size_param, 2))
 
-    payload = build_payload(message_received, available_spots)
+    payload = build_payload(message_received, available_spots, real_mode)
 
     # TODO: Test thoroughly
     if (len(payload) > available_spots):
@@ -577,16 +595,15 @@ def main(args):
     
     if (real_mode == 0):
         add_data_snake(grid, payload)
-        # Create auxliary grid: Provides reserved positions
-        aux_grid = populate_aux_grid(aux_grid, grid)
+        aux_grid = populate_aux_grid(aux_grid, grid) # Create auxliary grid: Provides reserved positions
         apply_mask(grid, aux_grid, mask_pattern)
         print_qr_grid(grid)
     else: 
         add_dark_cell(grid) 
         add_timing_strips(grid)
         add_format_information_region(grid, str(gui_mode), str(real_mode), bin(mask_pattern)[2:].zfill(3))
-        # Create auxliary grid: Provides reserved positions
-        aux_grid = populate_aux_grid(aux_grid, grid)
+        aux_grid = populate_aux_grid(aux_grid, grid) # Create auxliary grid: Provides reserved positions
+
         apply_mask(grid, aux_grid, mask_pattern)
         print_qr_grid(grid)
         draw_qr_grid(grid)
