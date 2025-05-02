@@ -361,24 +361,8 @@ def apply_mask(qr_grid, reserved_positions, mask_id):
                     qr_grid[row][col] = str(temp) 
 
 
-def encode_real(size, message, information_bits, pos_square_size, align_square_size):
-    """
-    Generates the QR code according to the project specifications using the
-    real layout.
-
-    Args:
-        size (int): The size of the QR grid to be generated
-        message (str): The message to be encoded
-        information_bits (array of int): the 15-bit information pattern
-        pos_square_size (int):  The size of the position pattern to generate
-        align_square_size (int):  The size of the alignment pattern to generate
-
-    Returns:
-        2D array of int: The completed QR grid
-    """
-    # TODO: implement this function.
-    # remove the following line when you add something to this function:
-    pass
+def encode_real(grid, aux_grid, payload):
+    print(len(payload))
 
 
 def encode_snake(size, message, pos_square_size, align_square_size):
@@ -413,6 +397,7 @@ def build_payload(message, available_spots, real_mode:int):
     # Fixed parts
     encoding = [0, 1, 0, 0] # Fixed
     message_length = len(message)
+    print("Message length: " + str(message_length))
     message_length_bits = [int(b) for b in f"{message_length:08b}"]  # Convert length to 8-bit binary
 
     # Convert message to 8-bit ASCII
@@ -603,7 +588,6 @@ def main(args):
         add_timing_strips(grid)
         add_format_information_region(grid, str(gui_mode), str(real_mode), bin(mask_pattern)[2:].zfill(3))
         aux_grid = populate_aux_grid(aux_grid, grid) # Create auxliary grid: Provides reserved positions
-
         apply_mask(grid, aux_grid, mask_pattern)
         print_qr_grid(grid)
         draw_qr_grid(grid)
