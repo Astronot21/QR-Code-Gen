@@ -44,10 +44,8 @@ def draw_qr_grid(qr_grid):
     """
     # =========================================================================================================
     # Canvas variables:
-
     row_counter:int = 0
     square_size = round(CANVAS_SIDE_LENGTH / (len(qr_grid) + 8))
-
 
     # =========================================================================================================
 
@@ -80,9 +78,9 @@ def draw_qr_grid(qr_grid):
         x = margin + (square_size / 2)
 
         for value in row:
-            if value == 0:
+            if int(value) == 0:
                 stddraw.setPenColor(stddraw.WHITE)
-            elif value == 1:
+            elif int(value) == 1:
                 stddraw.setPenColor(stddraw.BLACK)
             else:
                 stddraw.setPenColor(stddraw.GRAY) # dashes
