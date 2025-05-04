@@ -21,9 +21,7 @@ guide for how we think you can start to approach the project.
 """
 
 # imports
-from math import e
 import os
-from re import L
 import sys
 import stdio
 # Your imports go here
@@ -33,6 +31,8 @@ from qrcodelib import get_format_information_bits, get_error_codewords
 
 # global variables
 # Your global variables go here
+CANVAS_SIDE_LENGTH:int = 599
+
 
 def draw_qr_grid(qr_grid):
     """
@@ -46,8 +46,6 @@ def draw_qr_grid(qr_grid):
     # Canvas variables:
 
     row_counter:int = 0
-
-    CANVAS_SIDE_LENGTH = 599
     square_size = round(CANVAS_SIDE_LENGTH / (len(qr_grid) + 8))
 
 
@@ -262,33 +260,70 @@ def rotate_pattern_clockwise(data):
             data[row][column], data[row][n - column] = data[row][n - column], data[row][column]  # Swap elements
 
 
+def get_real_points():
+    """
+    Generates the list of points in the traversal order required. The traversal order is based on the zigzag fashion
+
+    Returns:
+        points: list[int]: The points in the traversal order
+    """
+    points = []
+    point_num = 0
+    col = 25
+    move_up = True
+    while point_num < 600:
+        if move_up:
+            col -= 1
+            for row in range(24, -1, -1):
+                # print(row, col)
+                points += [(row, col)]
+                col -= 1
+                # print(row, col)
+                points += [(row, col)]
+                col += 1
+            col -= 1
+            move_up = False
+        elif not move_up:
+            col -= 1
+            for row in range(0, 25):
+                # print(row, col)
+                points += [(row, col)]
+                col -= 1
+                # print(row, col)
+                points += [(row, col)]
+                col += 1
+            col -= 1
+            move_up = True
+        point_num += 50
+
+    for row in range(24, -1, -1):
+        points += [(row, 0)]
+
+    return points
+
+
 def real_snake_codeword(grid, aux_grid, payload:list[int]):
-    print(payload)
-    
-    rows = len(grid)
-    cols = len(grid[0])
+    """
+    Adds payload data in the required snake like fashion to the main grid.
+    Args:
+        grid: The main 2D grid
+        aux_grid: The auxiliary 2D grid containing the reserved positions
+        payload (list[int]): The full payload to be added containing 1's and 0's
+    """
+    points = get_real_points()
     payload_index = 0
 
-    for col in reversed(range(cols)):  # Start from rightmost column
-        if (cols - 1 - col) % 2 == 0:
-            row_range = reversed(range(rows))  # Downward (bottom to top)
-        else:
-            row_range = range(rows)  # Upward (top to bottom)
-
-        for row in row_range:
-            if aux_grid[row][col] != 'X':
-                if payload_index >= len(payload):
-                    return  # Stop if payload is exhausted
-                grid[row][col] = payload[payload_index]
-                payload_index += 1
-
-
+    for point in points:
+        point_row = point[0]
+        point_col = point[1]
+        if aux_grid[point_row][point_col] != 'X':
+            grid[point_row][point_col] = payload[payload_index]
 
 
 def add_data_at_anchor(qr_grid, anchor_x, anchor_y, data):
     """
     Places values contained in data to the qr_grid starting as positions given
-    by achnor_x and anchor_y.
+    by anchor_x and anchor_y.
 
     Args:
         qr_grid (2D array of int): The QR grid
@@ -304,7 +339,7 @@ def add_data_at_anchor(qr_grid, anchor_x, anchor_y, data):
 def add_data_snake(qr_grid, data):
     """
     Places values contained in data to the qr_grid in the snake layout as
-    specified in the project specifications.
+    specified in the project specifications. Used when not in real mode.
 
     Args:
         qr_grid (2D array of int): The QR grid
@@ -409,13 +444,14 @@ def encode_snake(size, message, pos_square_size, align_square_size):
     pass
 
 
-def build_payload(message, available_spots, real_mode:int):
+def build_payload(message:str, available_spots:int, real_mode:int):
     """
     Builds up the payload using the encoding info, message length, message codewords, termination pattern and padding bits
     
     Args:
         message:str: The message to be converted into the payload
         available_spots:int: The number of bits to fill, based on available grid slots
+        real_mode:int : Indicating whether the grid uses a real layout
     Returns:
         payload:list[int] The full payload to be added to the grid
     """
@@ -428,9 +464,9 @@ def build_payload(message, available_spots, real_mode:int):
 
     # Logic
     message_length = len(message)
-    print("MESSAGE LENGTH = " + str(message_length))
+    # print("MESSAGE LENGTH = " + str(message_length))
     num_message_bits = message_length * 8
-    print("MESSAGE LENGTH BITS = " + str(num_message_bits))
+    # print("MESSAGE LENGTH BITS = " + str(num_message_bits))
     message_length_bits = [int(b) for b in f"{message_length:08b}"]  # Convert length to 8-bit binary
 
     # Convert message to 8-bit ASCII
@@ -445,9 +481,9 @@ def build_payload(message, available_spots, real_mode:int):
     payload = encoding + message_length_bits + codewords + termination
     # Update available spots
     available_spots = available_spots - 4 - 8 - num_message_bits - 4
-    print("AVAILABLE SPOTS BEFORE MESSAGE, PADDING, ERROR CORRECTION AND REMAINDER = " + str(available_spots))
+    # print("AVAILABLE SPOTS BEFORE MESSAGE, PADDING, ERROR CORRECTION AND REMAINDER = " + str(available_spots))
     padding_spots = available_spots - 128 - 7
-    print("AVAILABLE SPOTS FOR PADDING AFTER MESSAGE = " + str(padding_spots))
+    # print("AVAILABLE SPOTS FOR PADDING AFTER MESSAGE = " + str(padding_spots))
 
     if real_mode == 1:
         if (padding_spots > 0):
@@ -457,7 +493,7 @@ def build_payload(message, available_spots, real_mode:int):
                 payload[:] += zero_seq
                 available_spots -= 8
                 padding_spots -= 8
-                print("8 INITIAL PADDING BITS ADDED\n\tNOW AVAILABLE SPOTS FOR PADDING ARE " + str(padding_spots))
+                # print("8 INITIAL PADDING BITS ADDED\n\tNOW AVAILABLE SPOTS FOR PADDING ARE " + str(padding_spots))
             else:
                 # this will add as many 0's from the zero sequence as there are available padding spots, which would be between 0 and 8 zeros
                 for i in range(padding_spots):
@@ -473,7 +509,7 @@ def build_payload(message, available_spots, real_mode:int):
         i += 1
         padding_spots -= 1
         available_spots -= 1
-    print("NUMBER OF PADDING SEQUENCE BITS ADDED = " + str(i))
+    # print("NUMBER OF PADDING SEQUENCE BITS ADDED = " + str(i))
 
     error_correction_codewords = get_error_codewords(error_codewords) # 16 x 8 = 128 bits
     error_bin = []
@@ -482,10 +518,10 @@ def build_payload(message, available_spots, real_mode:int):
         binary = binary.zfill(8)
         for digit in binary:
             error_bin.append(int(digit))
-    print("ERROR CORRECTION BITS ADDED = " + str(len(error_bin)))
+    # print("ERROR CORRECTION BITS ADDED = " + str(len(error_bin)))
 
     payload = payload + error_bin + remainder_bits
-    print("FINAL PAYLOAD SIZE = " + str(len(payload)))
+    # print("FINAL PAYLOAD SIZE = " + str(len(payload)))
 
     return payload
 
@@ -581,7 +617,7 @@ def main(args):
     # n^2 - (3p^2 + a^2), assuming here only position patterns and alignment patterns are placed
     if real_mode == 1:
         available_spots = pow(grid_size_param, 2) - (3*pow(position_pattern_size_param, 2) + pow(alignment_pattern_size_param, 2)) - 18 - 30 - 1
-        print("\nSPOTS AVAILABLE BEFORE REAL STUFF = " + str(available_spots))
+        # print("\nSPOTS AVAILABLE BEFORE REAL STUFF = " + str(available_spots))
         # subtract sizes of timing patterns and format information regions
     else:
         available_spots = pow(grid_size_param, 2) - (3*pow(position_pattern_size_param, 2) + pow(alignment_pattern_size_param, 2))
@@ -637,8 +673,8 @@ def main(args):
         add_dark_cell(grid) 
         add_timing_strips(grid)
         add_format_information_region(grid, str(gui_mode), str(real_mode), bin(mask_pattern)[2:].zfill(3))
-        aux_grid = populate_aux_grid(aux_grid, grid) # Create auxliary grid: Provides reserved positions
-        # real_snake_codeword(grid, aux_grid, payload)
+        aux_grid = populate_aux_grid(aux_grid, grid) # Create auxiliary grid: Provides reserved positions
+        real_snake_codeword(grid, aux_grid, payload)
         apply_mask(grid, aux_grid, mask_pattern)
         print_qr_grid(grid)
         draw_qr_grid(grid)
