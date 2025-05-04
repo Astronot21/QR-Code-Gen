@@ -318,6 +318,7 @@ def real_snake_codeword(grid, aux_grid, payload:list[int]):
         point_col = point[1]
         if aux_grid[point_row][point_col] != 'X':
             grid[point_row][point_col] = payload[payload_index]
+            payload_index += 1
 
 
 def add_data_at_anchor(qr_grid, anchor_x, anchor_y, data):
@@ -630,7 +631,6 @@ def main(args):
         return
 
     # =========================================================================================================
-
 
     
     # =========================================================================================================
