@@ -117,6 +117,7 @@ def add_timing_strips(qr_grid):
     Args:
         qr_grid (2D array of int): The data of the QR grid
     """
+    # =========================================================================================================
     for i in range(8, 17):
         if i % 2 == 0:
             qr_grid[6][i] = 1
@@ -124,6 +125,7 @@ def add_timing_strips(qr_grid):
         else:
             qr_grid[6][i] = 0
             qr_grid[i][6] = 0
+    # =========================================================================================================
 
 
 def add_format_information_region(grid, gui_mode:str, real_mode:str, mask_pattern: str):
@@ -133,22 +135,27 @@ def add_format_information_region(grid, gui_mode:str, real_mode:str, mask_patter
         qr_grid (2D array of int): The data of the QR grid.
         mask_pattern (int): The mask pattern specified by the encoding parameter
     """
+    # =========================================================================================================
     qr_type = gui_mode + real_mode
     format_vector = get_format_information_bits(qr_type, mask_pattern)
-    # print(format_vector)
 
+    # =========================================================================================================
+    # Add yellow ones
     index_counter = 0
     for i in range(0, 9):
         if i != 6:
             grid[i][8] = format_vector[index_counter]
             grid[8][i] = format_vector[len(format_vector) - index_counter - 1]
-            index_counter +=1 
+            index_counter +=1
+    # =========================================================================================================
 
-
+    # =========================================================================================================
+    # Add red ones
     for i in range(0, 8):
         grid[8][len(grid) - i - 1] = format_vector[i] 
     for i in range(0, 7):  
         grid[18 + i][8] = format_vector[8 + i]
+    # =========================================================================================================
 
 
 def print_qr_grid(qr_grid):
@@ -159,13 +166,14 @@ def print_qr_grid(qr_grid):
     Args:
         qr_grid (2D array of int): The data of the QR grid
     """
-
+    # =========================================================================================================
     stdio.write("\n")
     # print out values
     for row in qr_grid:
         for value in row:
             stdio.write(str(value) + " ")
-        stdio.write("\n")  # Move to the next line after each row 
+        stdio.write("\n")  # Move to the next line after each row
+    # =========================================================================================================
 
 
 def make_position_pattern(pos_square_size):
@@ -179,7 +187,7 @@ def make_position_pattern(pos_square_size):
     Returns:
         2D array of int: The position pattern
     """
-   
+    # =========================================================================================================
    # Generate a p x p matrix containing all 1's
     pattern = stdarray.create2D(pos_square_size, pos_square_size, 1)
 
@@ -213,6 +221,7 @@ def make_position_pattern(pos_square_size):
         pattern[middle][middle] = 1
     
     return pattern
+    # =========================================================================================================
     
 
 def make_alignment_pattern(align_square_size):
@@ -226,7 +235,7 @@ def make_alignment_pattern(align_square_size):
     Returns:
         2D array of int: The alignment pattern
     """
-
+    # =========================================================================================================
     # Create an array of size a x a containing all 0's
     pattern = stdarray.create2D(align_square_size, align_square_size, 0)
 
@@ -237,6 +246,7 @@ def make_alignment_pattern(align_square_size):
             pattern[i][j] = 1 if layer % 2 == 0 else 0  # Alternating 1s and 0s
     
     return pattern
+    # =========================================================================================================
 
 
 def rotate_pattern_clockwise(data):
@@ -246,6 +256,7 @@ def rotate_pattern_clockwise(data):
     Args:
         data (2D array of int): The array that should be rotated
     """
+    # =========================================================================================================
     p = len(data)
     for i in range(p):
         for j in range(i + 1, p):  # Avoid redundant swaps
@@ -257,6 +268,8 @@ def rotate_pattern_clockwise(data):
         for column in range(p // 2):
             data[row][column], data[row][n - column] = data[row][n - column], data[row][column]  # Swap elements
 
+    # =========================================================================================================
+
 
 def get_real_points():
     """
@@ -265,18 +278,22 @@ def get_real_points():
     Returns:
         points: list[int]: The points in the traversal order
     """
+    # =========================================================================================================
+    # Variables
     points = []
     point_num = 0
     col = 25
     move_up = True
+    # =========================================================================================================
+
+    # =========================================================================================================
+    # Logic
     while point_num < 600:
         if move_up:
             col -= 1
             for row in range(24, -1, -1):
-                # print(row, col)
                 points += [(row, col)]
                 col -= 1
-                # print(row, col)
                 points += [(row, col)]
                 col += 1
             col -= 1
@@ -284,20 +301,20 @@ def get_real_points():
         elif not move_up:
             col -= 1
             for row in range(0, 25):
-                # print(row, col)
                 points += [(row, col)]
                 col -= 1
-                # print(row, col)
                 points += [(row, col)]
                 col += 1
             col -= 1
             move_up = True
         point_num += 50
 
+    # Add last 24 which are all at column 0
     for row in range(24, -1, -1):
         points += [(row, 0)]
 
     return points
+# =========================================================================================================
 
 
 def real_snake_codeword(grid, aux_grid, payload:list[int]):
@@ -308,15 +325,23 @@ def real_snake_codeword(grid, aux_grid, payload:list[int]):
         aux_grid: The auxiliary 2D grid containing the reserved positions
         payload (list[int]): The full payload to be added containing 1's and 0's
     """
+    # =========================================================================================================
+    # Get coordinates
     points = get_real_points()
+    # =========================================================================================================
+
+    # =========================================================================================================
+    # Logic
     payload_index = 0
 
     for point in points:
         point_row = point[0]
         point_col = point[1]
+        # Check if current point is not a reserved position
         if aux_grid[point_row][point_col] != 'X':
             grid[point_row][point_col] = payload[payload_index]
-            payload_index += 1
+            payload_index += 1 # Update index in payload
+    # =========================================================================================================# =========================================================================================================
 
 
 def add_data_at_anchor(qr_grid, anchor_x, anchor_y, data):
@@ -345,10 +370,15 @@ def add_data_snake(qr_grid, data):
         data (array of int): The bit sequence of data that should be added to
         the QR grid
     """
-
+    # =========================================================================================================
+    # Variables:
     MAX_ROWS = len(qr_grid)
     MAX_COLUMNS = MAX_ROWS
     payload_index = 0
+    # =========================================================================================================
+
+    # =========================================================================================================
+    # Logic:
 
     row = 0
     while row < MAX_ROWS:
@@ -369,21 +399,7 @@ def add_data_snake(qr_grid, data):
                     payload_index += 1
                 col -= 1
         row += 1
-
-
-def add_data_real(qr_grid, data):
-    """
-    Places values contained in data to the qr_grid in the real layout as
-    specified in the project specifications.
-
-    Args:
-        qr_grid (2D array of int): The QR grid
-        data (array of int): The bit sequence of data that should be added to
-        the QR grid
-    """
-    # TODO: implement this function.
-    # remove the following line when you add something to this function:
-    pass
+    # =========================================================================================================
 
 
 def apply_mask(qr_grid, reserved_positions, mask_id):
@@ -396,6 +412,7 @@ def apply_mask(qr_grid, reserved_positions, mask_id):
         reserved_positions (2D array of int): the reserved positions
         mask_id (str): The mask id to apply to the QR grid
     """
+    # =========================================================================================================
 
     # Define a dictionary with the corresponding conditions. The condition is selected via the base-10 value of the masking pattern
     mask_conditions = {
@@ -407,7 +424,7 @@ def apply_mask(qr_grid, reserved_positions, mask_id):
     5: lambda r, c: (r * c) % 2 + (r * c) % 3 == 0,
     6: lambda r, c: ((r * c) % 2 + (r * c) % 3) % 2 == 0,
     7: lambda r, c: ((r + c) % 2 + (r * c) % 3) % 2 == 0
-}
+    }
 
     condition = mask_conditions.get(int(mask_id))
     if condition:
@@ -417,31 +434,9 @@ def apply_mask(qr_grid, reserved_positions, mask_id):
                     # print("Changed row " + str(row) + " and column" + str(col))
                     temp = int(qr_grid[row][col])
                     temp ^= 1 # using XOR to flip the bit
-                    qr_grid[row][col] = str(temp) 
+                    qr_grid[row][col] = str(temp)
 
-
-def encode_real(grid, aux_grid, payload):
-    print(len(payload))
-
-
-def encode_snake(size, message, pos_square_size, align_square_size):
-    """
-    Generates the QR code according to the project specifications using the
-    snake layout.
-
-    Args:
-        size (int): The size of the QR grid to be generated
-        message (str): The message to be encoded
-        pos_square_size (int):  The size of the position pattern to generate
-        align_square_size (int):  The size of the alignment pattern to generate
-
-    Returns:
-        2D array of int: The completed QR grid
-    """
-    # TODO: implement this function.
-    # remove the following line when you add something to this function:
-    pass
-
+    # =========================================================================================================
 
 def build_payload(message:str, available_spots:int, real_mode:int):
     """
@@ -454,18 +449,19 @@ def build_payload(message:str, available_spots:int, real_mode:int):
     Returns:
         payload:list[int] The full payload to be added to the grid
     """
+    # =========================================================================================================
     # Fixed parts
     encoding = [0, 1, 0, 0]
     termination = [0, 0, 0, 0] 
     zero_seq = [0, 0, 0, 0, 0, 0, 0, 0]
     padding_bits = [1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1]
     remainder_bits = [0, 0, 0, 0, 0, 0, 0]
+    # =========================================================================================================
 
+    # =========================================================================================================
     # Logic
     message_length = len(message)
-    # print("MESSAGE LENGTH = " + str(message_length))
     num_message_bits = message_length * 8
-    # print("MESSAGE LENGTH BITS = " + str(num_message_bits))
     message_length_bits = [int(b) for b in f"{message_length:08b}"]  # Convert length to 8-bit binary
 
     # Convert message to 8-bit ASCII
@@ -474,15 +470,16 @@ def build_payload(message:str, available_spots:int, real_mode:int):
     for char in message:
         codewords.extend([int(b) for b in f"{ord(char):08b}"])
         error_codewords.extend([ord(char)]) # stores decimal values for each character
-    
-    
+
+    # =========================================================================================================
+
+    # =========================================================================================================
     # Combine parts
+
     payload = encoding + message_length_bits + codewords + termination
     # Update available spots
     available_spots = available_spots - 4 - 8 - num_message_bits - 4
-    # print("AVAILABLE SPOTS BEFORE MESSAGE, PADDING, ERROR CORRECTION AND REMAINDER = " + str(available_spots))
     padding_spots = available_spots - 128 - 7
-    # print("AVAILABLE SPOTS FOR PADDING AFTER MESSAGE = " + str(padding_spots))
 
     if real_mode == 1:
         if (padding_spots > 0):
@@ -508,8 +505,8 @@ def build_payload(message:str, available_spots:int, real_mode:int):
         i += 1
         padding_spots -= 1
         available_spots -= 1
-    # print("NUMBER OF PADDING SEQUENCE BITS ADDED = " + str(i))
 
+    # Error correction codewords
     error_correction_codewords = get_error_codewords(error_codewords) # 16 x 8 = 128 bits
     error_bin = []
     for num in error_correction_codewords:
@@ -517,7 +514,6 @@ def build_payload(message:str, available_spots:int, real_mode:int):
         binary = binary.zfill(8)
         for digit in binary:
             error_bin.append(int(digit))
-    # print("ERROR CORRECTION BITS ADDED = " + str(len(error_bin)))
 
     payload = payload + error_bin + remainder_bits
     # print("FINAL PAYLOAD SIZE = " + str(len(payload)))
@@ -536,7 +532,6 @@ def populate_aux_grid(aux_grid, original_grid):
         aux_grid:list[int] A new grid marking reserved spots with an X
         num_open_squares:int The number of non-reserved squaress
     """
-    # TODO: If in real mode, add additional X's, if not in real mode, execute only the code below
     for row in range(len(aux_grid)):
         for col in range(len(aux_grid)):
             if (original_grid[row][col] != '-'):
@@ -563,9 +558,7 @@ def main(args):
         print("ERROR: Too many arguments")
         return
 
-    # TODO: Manually implement the strip function since it is not allowed in submission
     message_received = sys.stdin.read().strip() # strip() removes whitespace and newline characters, read() reads entire line
-
 
     encoding_param = int(args[1])
     if (not encoding_param in range(0, 32)):
